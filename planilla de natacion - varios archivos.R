@@ -5,7 +5,7 @@ library(dplyr)
 library(lubridate)
 library(openxlsx)
 
-file="data/evento 10  mujeres 18-24 100 cc metro estilo de espalda aficionados.pdf"
+file='data/evento 3  hombres 18-24 200 cc metro estilo libre federados.pdf'
 
 txt <- pdf_text(file)
 
@@ -47,7 +47,7 @@ eventos=texto_completo[vector_eventos]
 # ------------ creo los dataframe solo con los registros de timpos con separadores fijos
 
 
-pattern1="([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2}) "
+pattern1="([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2}).+([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2}) "
 
 vector_tiempos=str_detect(texto_completo,pattern1)
 
@@ -79,7 +79,7 @@ archivo4=read_fwf(columns2,
 
 archivo4 <- archivo4[ -c(1) ]
 archivo4 <- archivo4[2:length(archivo4)]
-archivo4 = archivo4[-1,]
+archivo4=na.omit(archivo4)
                    
 conjunto<- cbind(archivo1, archivo4)                  
                    
