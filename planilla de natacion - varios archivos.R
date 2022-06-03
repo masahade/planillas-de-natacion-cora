@@ -4,6 +4,7 @@ library(tidyverse)
 library(dplyr)
 library(lubridate)
 library(openxlsx)
+library(writexl)
 
 #file='data/evento 3  hombres 18-24 200 cc metro estilo libre federados.pdf'
 #-----------
@@ -19,9 +20,7 @@ DfTotal=data.frame()
 
 for (file in files) {
 
-print(file)
-
-# ---------
+  
   txt <- pdf_text(file)
   
   
@@ -51,91 +50,70 @@ print(file)
   
   nombre_competencia=linea2
   
-  #------ selecciona solo los registro de tiempos
+  # ------selecciona tiempos o eventos #####################
+  
+  pattern="^Evento|.([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2})"
+  
+  
+  tiempoyeventos_cond=str_detect(texto_completo,pattern)
+  
+  tiempo_y_eventos=str_trim(texto_completo[tiempoyeventos_cond])
   
   pattern="^Evento"
   
-  vector_eventos=str_detect(texto_completo,pattern)
+  cond_eventos=c(str_which(tiempo_y_eventos,pattern))
   
-  eventos=texto_completo[vector_eventos]
+  cond_w=c(str_which(tiempo_y_eventos,pattern))+1
   
-  # ------------ creo los dataframe solo con los registros de timpos con separadores fijos
+  primeros=tiempo_y_eventos[cond_w]
   
+  df_primeros=read_fwf(primeros,
+                       fwf_widths(c(2,28,6,35,20,20),c("posicion","nombre","edad","club",'tiempo1','tiempo2'))) 
+  df_primeros$orden=cond_w
+  # ---------------##### todos
   
-  pattern1="([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2}) "
+  pattern="([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2})"
   
-  vector_tiempos=str_detect(texto_completo,pattern1)
+  cond=c(str_which(tiempo_y_eventos,pattern))
+  primeros=tiempo_y_eventos[cond]
   
-  tiempos=str_trim(texto_completo[vector_tiempos])
+  df_todos=read_fwf(primeros,
+                    fwf_widths(c(2,28,6,35,20,20),c("posicion","nombre","edad","club",'tiempo1','tiempo2'))) 
+  df_todos$orden=cond
   
-  
-  archivo=read_fwf(tiempos,
-                   fwf_widths(c(2,28,7,35,20,20),c("posicion","nombre","edad","club",'tiempo1','tiempo2'))) 
-  
-  archivo1=read_fwf(tiempos,
-                    fwf_widths(c(2,30),c("posicion","nombre"))) 
-  
-  posicion=substr(tiempos, 1, 2)
-  nombre=str_trim(substr(tiempos, 3, 30))
-  
-  str_trim(substr(tiempos[1], 31, length(tiempos[1]))) 
-  
-  # -------------- tiene que unir dataframes y limpiar registros y columnas basura
-  
-  archivo3=read_fwf(tiempos,
-                    fwf_widths(c(30,150),c("posicion","nombre"))) 
+  df_diff=setdiff(df_todos,df_primeros)
   
   
-  write.csv(archivo3$nombre ,"columna2.csv", row.names = FALSE)
-  columns2=readLines("columna2.csv")
+  df_primeros$primeros=TRUE
+  df_diff$primeros=FALSE
   
-  archivo4=read_fwf(columns2,
-                    fwf_widths(c(1,2,40,19,19,10),c("x","edad","club",'tiempo1','tiempo2','cate'))) 
-  
-  archivo4 <- archivo4[ -c(1) ]
-  archivo4 <- archivo4[2:length(archivo4)]
-  archivo4 = archivo4[-1,]
-  
-  conjunto<- cbind(archivo1, archivo4)                  
-  
-  # ---
-  
-  conjunto2=conjunto[conjunto$posicion != 1,]
-  conjunto2$eventos=NA
-  
-  conjunto1=conjunto[conjunto$posicion == 1,]
+  conj_x<- rbind(df_primeros, df_diff) 
+  # ----------------------------------- HASTA ACA
+  eventos=tiempo_y_eventos[cond_eventos]
   
   
-  conjunto1=cbind(eventos, conjunto1)
+  evento_con_registro=data.frame(eventos,cond_w)
+  names(evento_con_registro)=c('eventos','orden')
   
-  conjunto=rbind(conjunto1,conjunto2)
+  df_todos_2=left_join(df_todos,evento_con_registro)
   
-  # --------ordena el dataframe por indice para hacer el fillna con el registro previo
+  df_todos_2 <-df_todos_2[order(df_todos_2$orden),]
   
-  conjunto=conjunto[ order(as.numeric(row.names(conjunto))), ]
-  
-  
-  conjunto = conjunto %>%
+  df_todos_2 = df_todos_2 %>%
     fill(eventos, .direction = "down")
   
-  conjunto$lugar=lugar_competencia
-  conjunto$nombre_competencia=nombre_competencia
-  conjunto$fecha=fecha_competencia
-  
+  df_todos_2$lugar=lugar_competencia
+  df_todos_2$nombre_competencia=nombre_competencia
+  df_todos_2$fecha=fecha_competencia
   
   file.remove('cora.txt')
   file.remove('columna2.csv')
   
-conjunto$posicion=as.character(conjunto$posicion)
-conjunto$tiempo1=as.character(conjunto$tiempo1)
-conjunto$tiempo2=as.character(conjunto$tiempo2)
-conjunto$cate=as.character(conjunto$cate)
 
   
-  
-  
-DfTotal <- rbind(DfTotal,conjunto)
+DfTotal <- rbind(DfTotal,df_todos_2)
 
 }
 
 write.csv(DfTotal, 'output/cora_resultado.csv')
+write_xlsx(DfTotal,'output/cora_resultado.xlsx')

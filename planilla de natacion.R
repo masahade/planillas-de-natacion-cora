@@ -66,7 +66,11 @@ primeros=tiempo_y_eventos[cond_w]
 df_primeros=read_fwf(primeros,
                  fwf_widths(c(2,28,6,35,20,20),c("posicion","nombre","edad","club",'tiempo1','tiempo2'))) 
 df_primeros$orden=cond_w
-# ---------------##### todos
+# ---------------##### separar 
+
+
+
+# ------------------
 
 pattern="([0-9]{1,2}:[0-9]{1,2}\\.[0-9]{2})"
 
