@@ -14,7 +14,7 @@ library(writexl)
 # en mi caso la carpeta se llama planilla de natacion y esta dentro del directorio projector 
 
 
-setwd("C:/projectoR/Planillas Natacion") # OJO CAMBIAR POR LA RUTA QUE SE ELIJA 
+#setwd("C:/projectoR/Planillas Natacion") # OJO CAMBIAR POR LA RUTA QUE SE ELIJA 
 
 
 #----------- selecciona los archivos pdf de la carpeta data descartando los mixtos
@@ -205,6 +205,9 @@ DfTotal$sexo=str_extract(comp1,pattern)
 
 pattern='ESPALDA|PECHO|LIBRE|MARIPOSA'
 DfTotal$estilo=str_extract(comp1,pattern)
+
+DfTotal$nombre=str_trim(DfTotal$nombre)
+DfTotal$club=str_trim(DfTotal$club)
 
 
 # ------------------ cre los archivos de xlsx y csv del dataframe con la info acumulada
